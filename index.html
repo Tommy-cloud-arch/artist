@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artist Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#F7F3EC;--bg2:#EDE6D8;
+    --accent:#9B7E5E;--accent2:#C4A882;
+    --text:#2C2318;--muted:#7A6955;
+    --border:rgba(155,126,94,0.25);
+  }
+  html { scroll-behavior: smooth; }
+  body { background:var(--bg);color:var(--text);font-family:'Lora',Georgia,serif;line-height:1.8;overflow-x:hidden; }
+
+  #loading-screen { position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;transition:opacity 0.6s ease; }
+  #loading-screen.hidden { opacity:0;pointer-events:none; }
+  .loader-title { font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--accent);letter-spacing:0.1em; }
+  .loader-bar { width:200px;height:2px;background:var(--border);border-radius:2px;overflow:hidden; }
+  .loader-bar-inner { height:100%;background:var(--accent2);border-radius:2px;animation:loadbar 1.8s ease-in-out infinite; }
+  .loader-msg { font-size:0.8rem;color:var(--muted);font-style:italic; }
+  @keyframes loadbar { 0%{width:0}60%{width:90%}100%{width:100%} }
+
+  header { min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;position:relative; }
+  header::before { content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 60% 40%,rgba(196,168,130,0.18) 0%,transparent 70%),radial-gradient(ellipse at 30% 70%,rgba(155,126,94,0.12) 0%,transparent 60%);pointer-events:none; }
+  .site-name { font-family:'Playfair Display',serif;font-size:clamp(1rem,3vw,1.3rem);font-weight:400;letter-spacing:0.35em;text-transform:uppercase;color:var(--accent);margin-bottom:2rem; }
+  .hero-title { font-family:'Playfair Display',serif;font-size:clamp(2.8rem,8vw,6rem);font-weight:400;line-height:1.15;letter-spacing:-0.02em;color:var(--text);margin-bottom:1.5rem; }
+  .hero-title em { font-style:italic;color:var(--accent); }
+  .hero-sub { font-size:1.1rem;color:var(--muted);max-width:420px;font-style:italic; }
+  .scroll-hint { position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0.5rem;color:var(--accent2);font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;animation:fadeFloat 2.5s ease-in-out infinite; }
+  .scroll-hint::after { content:'';display:block;width:1px;height:40px;background:linear-gradient(to bottom,var(--accent2),transparent); }
+  @keyframes fadeFloat { 0%,100%{opacity:.5;transform:translateX(-50%) translateY(0)}50%{opacity:1;transform:translateX(-50%) translateY(6px)} }
+
+  nav { position:sticky;top:0;z-index:100;background:rgba(247,243,236,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem; }
+  .nav-logo { font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--accent);letter-spacing:0.05em; }
+  .nav-links { display:flex;gap:2rem;list-style:none; }
+  .nav-links a { text-decoration:none;color:var(--muted);font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;transition:color 0.2s; }
+  .nav-links a:hover { color:var(--accent); }
+  .notion-badge { display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.9rem;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-size:0.72rem;color:var(--muted); }
+  .notion-dot { width:7px;height:7px;border-radius:50%;background:#4CAF50;animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+  .works-section { padding:5rem 0; }
+  .section-label { text-align:center;font-size:0.8rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent2);margin-bottom:5rem; }
+
+  .artwork-block { display:grid;grid-template-columns:1fr 1fr;min-height:90vh;opacity:0;transform:translateY(40px);transition:opacity 0.9s ease,transform 0.9s ease; }
+  .artwork-block.visible { opacity:1;transform:translateY(0); }
+  .artwork-block:nth-child(even) { direction:rtl; }
+  .artwork-block:nth-child(even)>* { direction:ltr; }
+  .artwork-image-wrap { position:relative;overflow:hidden;background:var(--bg2); }
+  .artwork-image-wrap img { width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.06);transition:transform 1.2s ease; }
+  .artwork-block.visible .artwork-image-wrap img { transform:scale(1); }
+  .artwork-number { position:absolute;top:2rem;left:2rem;font-family:'Playfair Display',serif;font-size:5rem;font-weight:400;color:rgba(44,35,24,0.08);line-height:1;pointer-events:none; }
+  .artwork-info { padding:4rem 5rem;display:flex;flex-direction:column;justify-content:center;gap:2rem;background:var(--bg); }
+  .artwork-meta { display:flex;align-items:center;gap:1rem; }
+  .artwork-year { font-size:0.8rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase; }
+  .artwork-divider { width:30px;height:1px;background:var(--border); }
+  .artwork-medium { font-size:0.8rem;color:var(--muted);font-style:italic; }
+  .artwork-title { font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3vw,2.8rem);font-weight:400;line-height:1.2;color:var(--text); }
+  .artwork-description { font-size:1rem;color:var(--muted);line-height:1.9;font-style:italic;border-left:2px solid var(--border);padding-left:1.5rem; }
+
+  .audio-player { display:flex;align-items:center;gap:1rem;padding:1.2rem 1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:60px;max-width:380px;transition:box-shadow 0.3s; }
+  .audio-player.playing { box-shadow:0 0 0 3px rgba(155,126,94,0.15); }
+  .play-btn { width:42px;height:42px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s,transform 0.15s; }
+  .play-btn:hover { background:var(--text);transform:scale(1.05); }
+  .play-btn svg { width:16px;height:16px;fill:#F7F3EC; }
+  .audio-info { flex:1;min-width:0; }
+  .audio-track-name { font-size:0.85rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .audio-artist-name { font-size:0.75rem;color:var(--muted);font-style:italic; }
+  .waveform { display:flex;align-items:center;gap:2px;height:24px;flex-shrink:0; }
+  .waveform span { display:block;width:3px;border-radius:2px;background:var(--accent2); }
+  .waveform.active span { animation:wave 0.8s ease-in-out infinite; }
+  .waveform.active span:nth-child(1){animation-delay:0s}.waveform.active span:nth-child(2){animation-delay:.1s}.waveform.active span:nth-child(3){animation-delay:.2s}.waveform.active span:nth-child(4){animation-delay:.3s}.waveform.active span:nth-child(5){animation-delay:.15s}
+  @keyframes wave { 0%,100%{height:4px}50%{height:18px} }
+
+  .ornament { text-align:center;color:var(--accent2);font-size:1.5rem;padding:1rem 0;letter-spacing:0.5em;opacity:0.5; }
+  footer { text-align:center;padding:5rem 2rem;background:var(--bg2);border-top:1px solid var(--border); }
+  .footer-name { font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;color:var(--text);margin-bottom:1rem; }
+  .footer-sub { font-size:0.9rem;color:var(--muted);font-style:italic; }
+
+  @media(max-width:768px) {
+    .artwork-block,.artwork-block:nth-child(even){grid-template-columns:1fr;direction:ltr}
+    .artwork-image-wrap{min-height:60vw}
+    .artwork-info{padding:2.5rem 1.5rem}
+    nav{padding:1rem 1.5rem}.nav-links{gap:1rem}.notion-badge{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <p class="loader-title">Portfolio</p>
+  <div class="loader-bar"><div class="loader-bar-inner"></div></div>
+  <p class="loader-msg" id="loading-msg">작품 데이터를 불러오는 중…</p>
+</div>
+
+<header>
+  <p class="site-name">Portfolio</p>
+  <h1 class="hero-title">그림이<br><em>말하는</em> 곳</h1>
+  <p class="hero-sub">그림과 이야기, 그리고 그 안에 깃든 소리들</p>
+  <div class="scroll-hint">Scroll</div>
+</header>
+
+<nav>
+  <span class="nav-logo">Artist Name</span>
+  <ul class="nav-links">
+    <li><a href="#works">Works</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="notion-badge">
+    <span class="notion-dot"></span>
+    Notion 연동됨
+  </div>
+</nav>
+
+<section class="works-section" id="works">
+  <p class="section-label">Works</p>
+  <div id="works-container"></div>
+</section>
+
+<footer id="contact">
+  <p class="footer-name">Artist Name</p>
+  <p class="footer-sub">그림과 음악이 만나는 공간 &nbsp;·&nbsp; contact@email.com</p>
+</footer>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+const players = {}, playStates = {};
+let ytReady = false;
+window.onYouTubeIframeAPIReady = () => { ytReady = true; if (window._pendingYT) initYT(); };
+
+async function fetchWorks() {
+  const res = await fetch('/api/works');
+  if (!res.ok) throw new Error('API 오류');
+  return res.json();
+}
+
+function renderWorks(works) {
+  const container = document.getElementById('works-container');
+  const wavePresets = [[6,12,18,10,8],[8,16,10,18,6],[10,6,16,12,8]];
+
+  works.forEach((w, i) => {
+    const num = i + 1;
+    const pad = String(w.번호 || num).padStart(2, '0');
+    const wh = wavePresets[i % 3];
+
+    const article = document.createElement('article');
+    article.className = 'artwork-block';
+    article.dataset.youtube = w.youtubeId || '';
+    article.innerHTML = `
+      <div class="artwork-image-wrap">
+        <span class="artwork-number">${pad}</span>
+        <img src="${w.이미지URL || ''}" alt="${w.작품제목}" loading="lazy"/>
+      </div>
+      <div class="artwork-info">
+        <div class="artwork-meta">
+          <span class="artwork-year">${w.연도}</span>
+          <span class="artwork-divider"></span>
+          <span class="artwork-medium">${w.재료}</span>
+        </div>
+        <h2 class="artwork-title">${w.작품제목}</h2>
+        <p class="artwork-description">${w.설명}</p>
+        <div class="audio-player" id="player-${num}">
+          <button class="play-btn"><svg viewBox="0 0 24 24" id="icon-${num}"><path d="M8 5v14l11-7z"/></svg></button>
+          <div class="audio-info">
+            <p class="audio-track-name">${w.트랙명}</p>
+            <p class="audio-artist-name">${w.아티스트}</p>
+          </div>
+          <div class="waveform" id="wave-${num}">
+            ${wh.map(h=>`<span style="height:${h}px"></span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    container.appendChild(article);
+    if (i < works.length - 1) {
+      const orn = document.createElement('div');
+      orn.className = 'ornament'; orn.textContent = '· · ·';
+      container.appendChild(orn);
+    }
+  });
+
+  document.querySelectorAll('.play-btn').forEach((btn, i) => btn.addEventListener('click', () => togglePlay(i+1)));
+
+  if (ytReady) initYT(); else window._pendingYT = true;
+
+  const blocks = document.querySelectorAll('.artwork-block');
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const idx = Array.from(blocks).indexOf(e.target) + 1;
+      if (e.isIntersecting && e.intersectionRatio >= 0.5) {
+        e.target.classList.add('visible');
+        if (ytReady && players[idx] && !playStates[idx]) setTimeout(() => togglePlay(idx), 600);
+      } else if (!e.isIntersecting && playStates[idx]) togglePlay(idx);
+    });
+  }, { threshold: 0.5 }).observe && blocks.forEach(b => document.querySelector('.artwork-block').parentNode && new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const idx = Array.from(blocks).indexOf(e.target)+1;
+      if(e.isIntersecting&&e.intersectionRatio>=0.5){e.target.classList.add('visible');if(ytReady&&players[idx]&&!playStates[idx])setTimeout(()=>togglePlay(idx),600);}else if(!e.isIntersecting&&playStates[idx])togglePlay(idx);
+    });
+  },{threshold:0.5}).observe(b));
+
+  new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';} }), {threshold:0.3})
+    .observe && document.querySelectorAll('.section-label,footer').forEach(el => {
+      el.style.cssText='opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease';
+      new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';}}),{threshold:0.3}).observe(el);
+    });
+
+  // fix: simple scroll observer
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const idx = Array.from(blocks).indexOf(e.target)+1;
+      if(e.isIntersecting&&e.intersectionRatio>=0.5){
+        e.target.classList.add('visible');
+        if(ytReady&&players[idx]&&!playStates[idx])setTimeout(()=>togglePlay(idx),600);
+      } else if(!e.isIntersecting&&playStates[idx]) togglePlay(idx);
+    });
+  },{threshold:0.5});
+  blocks.forEach(b=>obs.observe(b));
+
+  const fadeObs = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';}}),{threshold:0.3});
+  document.querySelectorAll('.section-label,footer').forEach(el=>{
+    el.style.opacity='0';el.style.transform='translateY(20px)';el.style.transition='opacity .7s ease,transform .7s ease';
+    fadeObs.observe(el);
+  });
+}
+
+function initYT() {
+  document.querySelectorAll('.artwork-block').forEach((block,i) => {
+    const ytId = block.dataset.youtube; if(!ytId) return;
+    const num = i+1, c = document.createElement('div');
+    c.id='yt-'+num; c.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+    block.appendChild(c);
+    players[num] = new YT.Player('yt-'+num,{videoId:ytId,playerVars:{autoplay:0,controls:0},events:{onStateChange:e=>{if(e.data===YT.PlayerState.ENDED)resetPlayer(num);}}});
+  });
+}
+
+function resetPlayer(n) {
+  playStates[n]=false;
+  document.getElementById('icon-'+n).innerHTML='<path d="M8 5v14l11-7z"/>';
+  document.getElementById('player-'+n).classList.remove('playing');
+  document.getElementById('wave-'+n).classList.remove('active');
+}
+
+function togglePlay(n) {
+  if(!players[n]) return;
+  if(playStates[n]){ players[n].pauseVideo(); resetPlayer(n); }
+  else {
+    Object.keys(players).forEach(k=>{if(parseInt(k)!==n&&playStates[k]){players[k].pauseVideo();resetPlayer(parseInt(k));}});
+    players[n].playVideo(); playStates[n]=true;
+    document.getElementById('icon-'+n).innerHTML='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    document.getElementById('player-'+n).classList.add('playing');
+    document.getElementById('wave-'+n).classList.add('active');
+  }
+}
+
+(async()=>{
+  const screen=document.getElementById('loading-screen');
+  const msg=document.getElementById('loading-msg');
+  try {
+    const works = await fetchWorks();
+    msg.textContent=`작품 ${works.length}개 불러옴 ✓`;
+    setTimeout(()=>{screen.classList.add('hidden');setTimeout(()=>screen.remove(),700);},400);
+    renderWorks(works);
+  } catch(err) {
+    screen.classList.add('hidden');
+    setTimeout(()=>screen.remove(),700);
+    console.error(err);
+  }
+})();
+</script>
+</body>
+</html>
